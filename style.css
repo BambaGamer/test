@@ -1,0 +1,227 @@
+:root {
+    /* מצב לילה (ברירת מחדל) */
+    --bg: #000000;
+    --text: #ffffff;
+    --card: #121212;
+    --primary: #9c5db9;
+    --secondary: #1a1a1a;
+    --border: #333;
+}
+
+body.light-mode {
+    /* מצב יום */
+    --bg: #f5f5f5;
+    --text: #000000;
+    --card: #ffffff;
+    --secondary: #e0e0e0;
+    --border: #ccc;
+}
+
+body { 
+    background: var(--bg); 
+    color: var(--text); 
+    transition: background 0.3s, color 0.3s;
+    font-family: -apple-system, system-ui, sans-serif; 
+    margin: 0; 
+    padding: 20px; 
+    direction: rtl; /* תמיכה בעברית */
+}
+
+/* --- אזור העלאה (כפתור הטיל) --- */
+.input-area {
+    margin-bottom: 25px;
+    display: flex;
+    flex-direction: row-reverse;
+    gap: 10px;
+}
+
+#fileInput {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+    display: block;
+}
+
+.btn-upload-full {
+    width: 100%;
+    height: 60px;
+    background: var(--primary);
+    border: none;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.btn-upload-full span {
+    color: white;
+    font-size: 1.1rem;
+    font-weight: bold;
+}
+
+.rocket-icon {
+    width: 35px;
+    height: 35px;
+    object-fit: contain;
+}
+
+.btn-upload-full:hover {
+    transform: translateY(-3px);
+    filter: brightness(1.1);
+}
+
+/* --- כפתור מצב יום/לילה --- */
+.theme-btn {
+    background: var(--secondary);
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    width: 45px;
+    height: 45px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    transition: all 0.3s;
+}
+
+/* --- רשימת השירים --- */
+header { margin-top: 30px; margin-bottom: 30px; text-align: right; }
+h1 { font-size: 3rem; margin: 0; font-weight: 900; letter-spacing: -1px; }
+.count { color: var(--primary); font-weight: bold; font-size: 0.9rem; }
+
+.list { display: flex; flex-direction: column; gap: 12px; padding-bottom: 120px; }
+
+.song-card { 
+    background: var(--card); 
+    padding: 12px; 
+    border-radius: 16px; 
+    display: flex; 
+    flex-direction: row-reverse; 
+    align-items: center; 
+    gap: 15px; 
+    transition: 0.3s; 
+    cursor: pointer;
+}
+
+.song-card:hover { transform: scale(1.02); }
+
+.thumb { width: 55px; height: 55px; border-radius: 10px; object-fit: cover; background: #333; }
+.info { flex: 1; text-align: right; }
+.info p { margin: 0; font-weight: bold; }
+
+.btn-delete { 
+    background: none; 
+    border: none; 
+    color: #444; 
+    font-size: 1.5rem; 
+    cursor: pointer; 
+    padding: 5px;
+}
+
+.btn-delete:hover { color: #ff4444; }
+
+/* --- הנגן התחתון (התיקון של המרכוז) --- */
+/* --- הנגן התחתון המעוצב --- */
+/* הנגן הצף האסתטי */
+.player-bar {
+    position: fixed;
+    bottom: 25px; /* רווח מהקצה התחתון של המסך */
+    left: 15px;
+    right: 15px;
+    height: 75px;
+    background: var(--primary); /* שקיפות עדינה */
+    backdrop-filter: blur(10px); /* אפקט זכוכית */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px; /* פינות עגולות ואסתטיות */
+    display: flex;
+    flex-direction: row-reverse; /* עברית - הכל מתחיל מימין */
+    align-items: center;
+    padding: 0 15px;
+    box-sizing: border-box;
+    z-index: 1000;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+/* אזור השליטה - כפתור פוס והמשך בצד ימין */
+.player-controls {
+    display: flex;
+    align-items: center;
+    margin-left: 15px; /* רווח מהתמונה שלידו */
+}
+
+#playBtn {
+    background: transparent !important; /* רקע שקוף לחלוטין */
+    border: none !important;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: none; /* מבטל את הצל */
+    border-radius: 0; /* מבטל את העיגול */
+    outline: none; /* מבטל מסגרת כחולה בלחיצה */
+}
+
+/* 2. מעצבים את תמונת ה-PNG שבפנים */
+.play-png-icon {
+    width: 65px; /* תגדיל/תקטין לפי הצורך של התמונה שלך */
+    height: 65px;
+    object-fit: contain; /* שומר על יחס התמונה */
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+/* 3. אפקט לחיצה אסתטי על ה-PNG */
+#playBtn:hover .play-png-icon {
+    transform: scale(1.08); /* גדל קצת */
+    opacity: 0.9; /* הופך להיות שקוף עדין */
+}
+
+#playBtn:active .play-png-icon {
+    transform: scale(0.95); /* קטן בלחיצה */
+}
+
+/* מידע על השיר - יופיע משמאל לכפתור */
+.player-info {
+    display: flex;
+    flex-direction: row-reverse;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+}
+
+.player-thumb {
+    width: 45px;
+    height: 45px;
+    border-radius: 10px;
+    object-fit: cover;
+}
+
+#playerTitle {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0;
+    color: rgb(255, 255, 255);
+    text-align: right;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* התאמה לנייד */
+@media (max-width: 480px) {
+    #playerTitle { max-width: 100px; font-size: 12px; }
+    .player-bar { padding: 0 10px; }
+    h1 { font-size: 2.2rem; }
+}

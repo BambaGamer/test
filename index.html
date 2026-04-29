@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>InStify</title>
+    
+    <link rel="apple-touch-icon" href="https://i.pinimg.com/1200x/a8/98/34/a89834b9eb73330380b26ab3cb612a8e.jpg">
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="Instify">
+
+    <!-- קישור לקובץ ה-CSS החיצוני -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header style="display: flex; justify-content: space-between; align-items: center; margin-top: 30px; margin-bottom: 30px;">
+<button id="themeToggle" class="theme-btn">
+    <span id="themeEmoji">🌙</span>
+</button>
+    <div>
+        <h1 style="margin: 0;">InStify</h1>
+        <div class="count" id="count">שירים</div>
+    </div>
+</header>
+
+<div class="input-area">
+<input type="file" id="fileInput" style="display:none">
+    
+    <button class="btn-upload-full" onclick="document.getElementById('fileInput').click()">
+        <img src="rocket.png" alt="Upload" class="rocket-icon">
+    </button>
+</div>
+
+    <div class="list" id="playlist"></div>
+
+<div id="player" class="player-bar" style="display:none;">
+    
+    <div class="player-info">
+        <img id="playerImg" src="./song.jpg" class="player-thumb">
+        <p id="playerTitle">טוען...</p>
+    </div>
+
+    <div class="player-controls">
+        <button id="playBtn">
+            <img src="play-icon.png" alt="Play" class="play-png-icon">
+        </button>
+    </div>
+
+</div>
+
+    <!-- קישור לקובץ ה-JS החיצוני -->
+    <script src="script.js"></script>
+</body>
+</html>
