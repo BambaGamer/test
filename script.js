@@ -4,6 +4,7 @@ let db;
 let songs = [];
 const audio = new Audio();
 audio.preload = 'auto';
+let language = 'hebrew';
 
 const request = indexedDB.open(dbName, 1);
 
@@ -38,28 +39,27 @@ document.getElementById('fileInput').addEventListener('change', function(event) 
     const file = event.target.files[0];
     if (!file) return;
 
-    const loader = document.getElementById('loader');
-    if (loader) loader.style.display = 'block';
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const base64Data = e.target.result; // השיר הופך לטקסט ארוך
+        
+        const songTitle = prompt("שם השיר?", file.name.replace(/\.[^/.]+$/, "")) || "שיר חדש";
+        
+        const newSong = {
+            id: Date.now(),
+            title: songTitle,
+            fileData: base64Data, // שומרים את הטקסט ב-DB
+            image: 'https://i.pinimg.com/1200x/a8/98/34/a89834b9eb73330380b26ab3cb612a8e.jpg'
+        };
 
-    const songTitle = prompt("איך לקרוא לשיר?", file.name.replace(/\.[^/.]+$/, "")) || "שיר חדש";
-    
-    const newSong = {
-        id: Date.now(),
-        title: songTitle,
-        fileData: file,
-        image: 'https://i.pinimg.com/1200x/a8/98/34/a89834b9eb73330380b26ab3cb612a8e.jpg'
+        const tx = db.transaction("songs", "readwrite");
+        const store = tx.objectStore("songs");
+        store.add(newSong).onsuccess = () => {
+            songs.unshift(newSong);
+            render();
+        };
     };
-
-    const tx = db.transaction("songs", "readwrite");
-    const store = tx.objectStore("songs");
-    const addRequest = store.add(newSong);
-
-    addRequest.onsuccess = () => {
-        songs.unshift(newSong);
-        render();
-        if (loader) loader.style.display = 'none';
-        event.target.value = '';
-    };
+    reader.readAsDataURL(file); // הפעולה שהופכת את הקובץ לטקסט
 });
 
 // --- 4. פונקציית הניגון (התיקון לאייפון) ---
@@ -73,58 +73,51 @@ function play(song) {
         return;
     }
 
-    // יצירת קישור לקובץ
+    // שחרור זיכרון קודם כדי למנוע קריסה
+    if (audio.src && audio.src.startsWith('blob:')) {
+        URL.revokeObjectURL(audio.src);
+    }
+
+    // יצירת כתובת זמנית מהקובץ (Blob)
     const songUrl = URL.createObjectURL(song.fileData);
     audio.src = songUrl;
     audio.dataset.currentId = song.id;
-    audio.load(); // הכרחי לריענון ה-Buffer באייפון
 
     audio.play().then(() => {
         if (player) player.style.display = 'flex';
         if (playerTitle) playerTitle.innerText = song.title;
         if (playerImg) playerImg.src = song.image;
 
-        // עדכון Media Session (מסך נעילה)
+        // עדכון מסך הנעילה
         if ('mediaSession' in navigator) {
             navigator.mediaSession.metadata = new MediaMetadata({
                 title: song.title,
                 artist: 'Instify',
-                album: 'My Playlist',
                 artwork: [{ src: song.image, sizes: '512x512', type: 'image/jpg' }]
             });
+            // עדכון המצב כדי שהאייפון יציג את הנגן
+            navigator.mediaSession.playbackState = "playing";
         }
-    }).catch(e => console.error("Playback error:", e));
+    }).catch(e => console.error(e));
 }
 
-// --- 5. שליטה ממסך הנעילה (MediaSession Handlers) ---
 if ('mediaSession' in navigator) {
     navigator.mediaSession.setActionHandler('play', async () => {
-        const currentTime = audio.currentTime;
         try {
             await audio.play();
+            navigator.mediaSession.playbackState = "playing";
         } catch (err) {
-            // אם נרדם - טוענים מחדש לאותה נקודה
-            audio.load();
-            audio.currentTime = currentTime;
+            // אם האייפון חסם, אנחנו פשוט "מרעננים" את הסטטוס
+            console.log("Playback failed, retrying...");
             audio.play();
         }
     });
 
     navigator.mediaSession.setActionHandler('pause', () => {
         audio.pause();
+        navigator.mediaSession.playbackState = "paused";
     });
 }
-
-// מאזינים לאירועי אודיו לעדכון ה-UI והמערכת
-audio.addEventListener('play', () => {
-    if ('mediaSession' in navigator) navigator.mediaSession.playbackState = "playing";
-    updateBtn();
-});
-
-audio.addEventListener('pause', () => {
-    if ('mediaSession' in navigator) navigator.mediaSession.playbackState = "paused";
-    updateBtn();
-});
 
 // --- 6. עדכון כפתור Play/Pause (UI) ---
 function updateBtn() {
@@ -141,7 +134,16 @@ function render() {
     if (!list) return;
 
     list.innerHTML = '';
-    if (count) count.innerText = `${songs.length} שירים בפלייליסט`;
+    let textssongs = "";
+
+    if (language === "english") {
+        textssongs = "playlist songs";
+    }
+    else if (language === "hebrew") {
+        textssongs = "שירים בפלייליסט"
+    }
+
+    if (count) count.innerText = `${songs.length} ${textssongs}`;
 
     songs.forEach((song) => {
         const card = document.createElement('div');
@@ -186,11 +188,45 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
+audio.addEventListener('play', () => {
+    const icon = document.querySelector('.play-png-icon');
+    if (icon) {
+        icon.src = 'pause-icon.png';
+        
+        icon.classList.remove('animate-pop');
+        void icon.offsetWidth;
+        icon.classList.add('animate-pop');
+    }
+});
+
+audio.addEventListener('pause', () => {
+    const icon = document.querySelector('.play-png-icon');
+    if (icon) {
+        icon.src = 'play-icon.png';
+
+        icon.classList.remove('animate-pop');
+        void icon.offsetWidth;
+        icon.classList.add('animate-pop');
+    }
+});
+
+document.body.addEventListener('touchstart', function() {}, false);
+
+const handleIconChange = (newSrc) => {
+    const icon = document.querySelector('.play-png-icon');
+    if (icon) {
+        icon.src = newSrc;
+        icon.classList.remove('animate-pop'); // מסיר את האנימציה
+        void icon.offsetWidth;                // "טריק" שמכריח את הדפדפן לרענן (Reflow)
+        icon.classList.add('animate-pop');    // מוסיף אותה מחדש
+    }
+};
+
     // טעינת מצב לילה
     if (localStorage.getItem('theme') === 'light') {
         document.body.classList.add('light-mode');
         const themeEmoji = document.getElementById('themeEmoji');
-        if (themeEmoji) themeEmoji.innerText = '☀️';
+        if (themeEmoji) themeEmoji.innerText = '✦';
     }
 });
 
@@ -201,7 +237,7 @@ if (themeToggle) {
         document.body.classList.toggle('light-mode');
         const isLight = document.body.classList.contains('light-mode');
         const themeEmoji = document.getElementById('themeEmoji');
-        if (themeEmoji) themeEmoji.innerText = isLight ? '☀️' : '🌙';
+        if (themeEmoji) themeEmoji.innerText = isLight ? '✦' : '☾';
         localStorage.setItem('theme', isLight ? 'light' : 'dark');
     });
 }

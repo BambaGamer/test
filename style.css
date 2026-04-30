@@ -2,16 +2,18 @@
     /* מצב לילה (ברירת מחדל) */
     --bg: #000000;
     --text: #ffffff;
-    --card: #121212;
+    --card: #ffffff;
     --primary: #9c5db9;
     --secondary: #1a1a1a;
     --border: #333;
 }
 
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap');
+
 body.light-mode {
     /* מצב יום */
     --bg: #f5f5f5;
-    --text: #000000;
+    --text: #2c2a2a;
     --card: #ffffff;
     --secondary: #e0e0e0;
     --border: #ccc;
@@ -81,23 +83,48 @@ body {
 
 /* --- כפתור מצב יום/לילה --- */
 .theme-btn {
-    background: var(--secondary);
-    border: 1px solid var(--border);
-    border-radius: 50%;
-    width: 45px;
-    height: 45px;
+    /* 1. ביטול הרקע לחלוטין (כמו שרצית) */
+    background: transparent; 
+    border: none;
     cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
     transition: all 0.3s;
+    
+    /* 2. גודל פיזי לכפתור (כדי שאפשר יהיה להזיז אותו) */
+    width: 60px;  /* רוחב הכפתור */
+    height: 60px; /* גובה הכפתור */
+    
+    /* 3. שליטה במיקום האימוג'י בתוך הכפתור */
+    display: flex;
+    align-items: center;    /* יישור אנכי למרכז */
+    justify-content: flex-end; /* דוחף את האימוג'י לצד ימין */
+    
+    /* 4. מרווח קטן מהדופן הימנית */
+    padding-right: 5px; 
+
+    /* 5. הוספת ה-Drop Shadow לאימוג'י עצמו */
+    filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.6)); /* הילה לבנה */
+}
+
+/* מצב ברירת מחדל (ירח / חושך) - הילה לבנה */
+.theme-btn span {
+    font-size: 2rem;
+    filter: drop-shadow(2 0 5px rgba(255, 255, 255, 0.8));
+    color:#ffffff;
+    transition: filter 0.3s; /* מעבר חלק של הצל */
+}
+
+/* כשהדף במצב אור (שמש) - הילה שחורה */
+body.light-mode .theme-btn span {
+    font-size: 3.5rem;
+    color:#5e5c5c;
+    filter: drop-shadow(0 0 10px rgb(0, 0, 0, 0.3));
+    transform: translate(-5px, -5px);
 }
 
 /* --- רשימת השירים --- */
 header { margin-top: 30px; margin-bottom: 30px; text-align: right; }
 h1 { font-size: 3rem; margin: 0; font-weight: 900; letter-spacing: -1px; }
-.count { color: var(--primary); font-weight: bold; font-size: 0.9rem; }
+.count { color: var(--); font-weight: bold; font-size: 0.9rem; }
 
 .list { display: flex; flex-direction: column; gap: 12px; padding-bottom: 120px; }
 
@@ -160,36 +187,41 @@ h1 { font-size: 3rem; margin: 0; font-weight: 900; letter-spacing: -1px; }
 }
 
 #playBtn {
-    background: transparent !important; /* רקע שקוף לחלוטין */
-    border: none !important;
-    padding: 0;
-    margin: 0;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: none; /* מבטל את הצל */
-    border-radius: 0; /* מבטל את העיגול */
-    outline: none; /* מבטל מסגרת כחולה בלחיצה */
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
+    border: none;
+    background: transparent;
 }
 
-/* 2. מעצבים את תמונת ה-PNG שבפנים */
 .play-png-icon {
-    width: 65px; /* תגדיל/תקטין לפי הצורך של התמונה שלך */
-    height: 65px;
-    object-fit: contain; /* שומר על יחס התמונה */
-    transition: transform 0.2s ease, opacity 0.2s ease;
+    width: 50px;
+    height: 50px;
+    object-fit: contain;
+    /* transition חשוב מאוד לחזרה מהלחיצה */
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+    pointer-events: none;
+    will-change: transform;
+
+    transform: translateX(2px);
 }
 
-/* 3. אפקט לחיצה אסתטי על ה-PNG */
-#playBtn:hover .play-png-icon {
-    transform: scale(1.08); /* גדל קצת */
-    opacity: 0.9; /* הופך להיות שקוף עדין */
+/* המחלקה שנוסיף ב-JS כדי להפעיל את הפופ-אפ */
+.animate-pop {
+    animation: icon-pop-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 
+/* הלחיצה עצמה - התכווצות "קפיצית" מורגשת */
 #playBtn:active .play-png-icon {
-    transform: scale(0.95); /* קטן בלחיצה */
+    transform: translateX(5px) scale(0.7) !important;
+    filter: brightness(0.9);
 }
+
+@keyframes icon-pop-in {
+    0% { transform: translateX(2px) scale(0.5); opacity: 0; }
+    70% { transform: translateX(2px) scale(1.15); opacity: 1; }
+    100% { transform: translateX(2px) scale(1); opacity: 1; }
+}
+
 
 /* מידע על השיר - יופיע משמאל לכפתור */
 .player-info {
@@ -209,13 +241,14 @@ h1 { font-size: 3rem; margin: 0; font-weight: 900; letter-spacing: -1px; }
 }
 
 #playerTitle {
-    font-size: 14px;
-    font-weight: 600;
+    font-size: 20px !important;
+    font-weight: 700;
     margin: 0;
     color: rgb(255, 255, 255);
     text-align: right;
     white-space: nowrap;
     overflow: hidden;
+    transform: translateX(100px);
     text-overflow: ellipsis;
 }
 
