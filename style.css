@@ -2,7 +2,7 @@
     /* מצב לילה (ברירת מחדל) */
     --bg: #000000;
     --text: #ffffff;
-    --card: #ffffff;
+    --card: #222121;
     --primary: #9c5db9;
     --secondary: #1a1a1a;
     --border: #333;
@@ -12,11 +12,189 @@
 
 body.light-mode {
     /* מצב יום */
-    --bg: #f5f5f5;
+    --bg: #ebe5e5;
     --text: #2c2a2a;
     --card: #ffffff;
     --secondary: #e0e0e0;
     --border: #ccc;
+}
+
+#splash {
+    position: fixed;
+    inset: 0;
+    background: rgb(211, 209, 209);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    z-index: 99999;
+    transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.logo {
+    width: 120px;   /* גודל הלוגו */
+    height: auto;
+
+    transform: scale(0.6);
+    opacity: 0;
+
+    animation: logoIntro 2s ease forwards;
+}
+
+/* האנימציה עצמה */
+@keyframes logoIntro {
+    0% {
+        transform: scale(1);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* רקע כהה מאחורה */
+#queuePanel {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, 60%) scale(0.9);
+    width: 85%;
+    max-width: 420px;
+    height: 60%;
+    
+    background: #121212; /* ❗ לא transparent */
+    border-radius: 18px;
+    color: white;
+    overflow: hidden;
+    
+    opacity: 0;
+    pointer-events: none;
+
+    transition: all 0.25s ease;
+
+    z-index: 9999;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+}
+
+#queueBtn {
+    background: #1f1f1f00;
+    color: #a982b1;
+    border: none;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    font-size: 25px;
+    cursor: pointer;
+    transform: translateX(5px);
+}
+
+#queueBtn,
+#themeToggle {
+    width: 40px;
+    height: 40px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+    border: none;
+
+    background: transparent;
+}
+
+.top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 10px;
+    margin-top: 30px;
+}
+
+.title-block {
+    text-align: left;
+}
+
+.right-controls {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.right-controls button {
+    margin: 0;
+    padding: 0;
+    line-height: 1;
+}
+
+.right-controls button + button {
+    margin-right: 5px;
+}
+
+/* מצב פתוח */
+#queuePanel.open {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* רקע שחור מאחורה (overlay) */
+#queueOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(145, 116, 140, 0.6);
+    opacity: 0;
+    pointer-events: none;
+    transition: 0.2s;
+    z-index: 9998;
+}
+
+#queueOverlay.open {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* ידית קטנה למראה יפה */
+.queue-handle {
+    width: 40px;
+    height: 5px;
+    background: #444;
+    border-radius: 10px;
+    margin: 10px auto;
+}
+
+/* כותרת */
+#queuePanel h3 {
+    text-align: center;
+    margin: 5px 0 10px;
+}
+
+/* רשימה */
+#queueList {
+    padding: 10px;
+    overflow-y: auto;
+    height: calc(100% - 40px);
+}
+
+/* שיר */
+.queue-item {
+    padding: 12px;
+    margin: 6px 0;
+    border-radius: 10px;
+    background: #4e4e4e;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.queue-item:hover {
+    background: #807f7f;
+}
+
+/* שיר נוכחי */
+.queue-item.active {
+    background: #333;
+    font-weight: bold;
 }
 
 body { 
@@ -83,42 +261,35 @@ body {
 
 /* --- כפתור מצב יום/לילה --- */
 .theme-btn {
-    /* 1. ביטול הרקע לחלוטין (כמו שרצית) */
-    background: transparent; 
-    border: none;
-    cursor: pointer;
-    transition: all 0.3s;
-    
-    /* 2. גודל פיזי לכפתור (כדי שאפשר יהיה להזיז אותו) */
-    width: 60px;  /* רוחב הכפתור */
-    height: 60px; /* גובה הכפתור */
-    
-    /* 3. שליטה במיקום האימוג'י בתוך הכפתור */
-    display: flex;
-    align-items: center;    /* יישור אנכי למרכז */
-    justify-content: flex-end; /* דוחף את האימוג'י לצד ימין */
-    
-    /* 4. מרווח קטן מהדופן הימנית */
-    padding-right: 5px; 
+    width: 40px;
+    height: 40px;
 
-    /* 5. הוספת ה-Drop Shadow לאימוג'י עצמו */
-    filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.6)); /* הילה לבנה */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: #000000;
+    border: none;
+    border-radius: 50%;
+
+    cursor: pointer;
 }
 
 /* מצב ברירת מחדל (ירח / חושך) - הילה לבנה */
 .theme-btn span {
-    font-size: 2rem;
-    filter: drop-shadow(2 0 5px rgba(255, 255, 255, 0.8));
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     color:#ffffff;
-    transition: filter 0.3s; /* מעבר חלק של הצל */
+    transform: none; /* חשוב! */
 }
 
 /* כשהדף במצב אור (שמש) - הילה שחורה */
 body.light-mode .theme-btn span {
-    font-size: 3.5rem;
-    color:#5e5c5c;
-    filter: drop-shadow(0 0 10px rgb(0, 0, 0, 0.3));
-    transform: translate(-5px, -5px);
+    font-size: 2.5rem;
+    color:#a982b1;
+    transform: translate(0px, -3px);
 }
 
 /* --- רשימת השירים --- */
@@ -149,7 +320,7 @@ h1 { font-size: 3rem; margin: 0; font-weight: 900; letter-spacing: -1px; }
 .btn-delete { 
     background: none; 
     border: none; 
-    color: #444; 
+    color: #777575; 
     font-size: 1.5rem; 
     cursor: pointer; 
     padding: 5px;
@@ -157,33 +328,31 @@ h1 { font-size: 3rem; margin: 0; font-weight: 900; letter-spacing: -1px; }
 
 .btn-delete:hover { color: #ff4444; }
 
-/* --- הנגן התחתון (התיקון של המרכוז) --- */
-/* --- הנגן התחתון המעוצב --- */
-/* הנגן הצף האסתטי */
 .player-bar {
     position: fixed;
-    bottom: 25px; /* רווח מהקצה התחתון של המסך */
+    bottom: 25px;
     left: 15px;
     right: 15px;
-    height: 75px;
-    background: var(--primary); /* שקיפות עדינה */
-    backdrop-filter: blur(10px); /* אפקט זכוכית */
+    height: 85px; /* הגבהתי מעט כדי שיהיה מקום לפס ולשם */
+    background: var(--primary);
+    backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 20px; /* פינות עגולות ואסתטיות */
+    border-radius: 20px;
     display: flex;
-    flex-direction: row-reverse; /* עברית - הכל מתחיל מימין */
     align-items: center;
     padding: 0 15px;
     box-sizing: border-box;
     z-index: 1000;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    /* שים לב: הורדתי את ה-row-reverse מכאן כדי לשלוט בזה ידנית */
+    flex-direction: row-reverse; 
 }
 
 /* אזור השליטה - כפתור פוס והמשך בצד ימין */
 .player-controls {
     display: flex;
     align-items: center;
-    margin-left: 15px; /* רווח מהתמונה שלידו */
+    flex-shrink: 0;
 }
 
 #playBtn {
@@ -226,30 +395,85 @@ h1 { font-size: 3rem; margin: 0; font-weight: 900; letter-spacing: -1px; }
 /* מידע על השיר - יופיע משמאל לכפתור */
 .player-info {
     display: flex;
-    flex-direction: row-reverse;
-    align-items: center;
-    gap: 12px;
-    flex: 1;
+    flex-direction: column; 
+    justify-content: center;
+    flex: 1; 
     min-width: 0;
+    margin: 0 10px;
+    text-align: right;
+    overflow: hidden; /* זה שומר שהטקסט הרץ לא יצא מגבולות המרכז */
+    position: relative;
+}
+
+.scroll-text {
+    animation: marquee 8s linear infinite;
+    padding-right: 50px; /* רווח לפני שהטקסט חוזר על עצמו */
+}
+
+.marquee-active {
+    display: inline-block !important; /* משחרר את החסימה של ה-block */
+    width: max-content !important;    /* מאפשר לטקסט להיפרס לכל האורך */
+    
+    /* ה-שורה שחיכית לה: */
+    animation: marquee-scroll 8s linear infinite; 
+    
+    padding-left: 50px; 
+}
+
+@keyframes marquee-scroll {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        /* הזזה ימינה בגלל ה-RTL (עברית) */
+        transform: translateX(100%);
+    }
 }
 
 .player-thumb {
-    width: 45px;
-    height: 45px;
+    width: 50px;
+    height: 50px;
     border-radius: 10px;
     object-fit: cover;
+    min-width: 0;
+    margin: 0 10px;
+    flex-shrink: 0; /* מבטיח שהתמונה לא תתכווץ */
 }
 
 #playerTitle {
-    font-size: 20px !important;
+    font-size: 16px !important;
     font-weight: 700;
-    margin: 0;
-    color: rgb(255, 255, 255);
-    text-align: right;
+    color: white;
+    margin: 0 0 5px 0;
     white-space: nowrap;
+    display: block; /* ברירת מחדל - לא זז */
+    text-align: right;
     overflow: hidden;
-    transform: translateX(100px);
-    text-overflow: ellipsis;
+    text-overflow: clip;
+}
+
+.progress-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+}
+
+#progress {
+    flex: 1;
+    height: 4px;
+    cursor: pointer;
+    accent-color: white;
+}
+
+#currentTime, #duration {
+    font-size: 10px;
+    color: rgba(255,255,255,0.7);
+    min-width: 25px;
+}
+
+#progress:hover {
+    height: 6px; /* אפקט קטן במעבר עכבר */
 }
 
 /* התאמה לנייד */

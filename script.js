@@ -39,28 +39,40 @@ document.getElementById('fileInput').addEventListener('change', function(event) 
     const file = event.target.files[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const base64Data = e.target.result; // השיר הופך לטקסט ארוך
-        
-        const songTitle = prompt("שם השיר?", file.name.replace(/\.[^/.]+$/, "")) || "שיר חדש";
-        
-        const newSong = {
-            id: Date.now(),
-            title: songTitle,
-            fileData: base64Data, // שומרים את הטקסט ב-DB
-            image: 'https://i.pinimg.com/1200x/a8/98/34/a89834b9eb73330380b26ab3cb612a8e.jpg'
-        };
-
-        const tx = db.transaction("songs", "readwrite");
-        const store = tx.objectStore("songs");
-        store.add(newSong).onsuccess = () => {
-            songs.unshift(newSong);
-            render();
-        };
+    // לא צריך FileReader יותר! IndexedDB יודע לשמור קבצים (Blobs) כמו שהם.
+    const songTitle = prompt("שם השיר?", file.name.replace(/\.[^/.]+$/, "")) || "שיר חדש";
+    
+    const newSong = {
+        id: Date.now(),
+        title: songTitle,
+        fileData: file, // כאן אנחנו שומרים את הקובץ עצמו (Blob)
+        image: 'https://i.pinimg.com/1200x/a8/98/34/a89834b9eb73330380b26ab3cb612a8e.jpg'
     };
-    reader.readAsDataURL(file); // הפעולה שהופכת את הקובץ לטקסט
+
+    const tx = db.transaction("songs", "readwrite");
+    const store = tx.objectStore("songs");
+    
+    store.add(newSong).onsuccess = () => {
+        songs.unshift(newSong);
+        render();
+        alert("השיר נוסף בהצלחה!");
+    };
+    
+    store.onerror = (e) => console.error("שגיאה בשמירת השיר:", e.target.error);
 });
+
+function checkTitleScroll() {
+    const title = document.getElementById('playerTitle');
+    if (!title) return;
+
+    // מנקים קודם את האנימציה
+    title.classList.remove('marquee-active');
+
+    // אם אורך הטקסט גדול מ-20 תווים
+    if (title.innerText.length > 20) {
+        title.classList.add('marquee-active');
+    }
+}
 
 // --- 4. פונקציית הניגון (התיקון לאייפון) ---
 function play(song) {
@@ -73,50 +85,125 @@ function play(song) {
         return;
     }
 
-    // שחרור זיכרון קודם כדי למנוע קריסה
+    audio.pause(); 
     if (audio.src && audio.src.startsWith('blob:')) {
-        URL.revokeObjectURL(audio.src);
+        URL.revokeObjectURL(audio.src); 
     }
-
-    // יצירת כתובת זמנית מהקובץ (Blob)
+    
     const songUrl = URL.createObjectURL(song.fileData);
     audio.src = songUrl;
     audio.dataset.currentId = song.id;
 
+    // --- התיקון כאן: מעדכנים את השם *לפני* ה-play ---
+    if (playerTitle) {
+        playerTitle.innerText = song.title;
+        checkTitleScroll(); 
+    }
+    if (playerImg) playerImg.src = song.image;
+    
+    updateMediaSession(song); // עדכון שלט מסך הנעילה מיד
+
     audio.play().then(() => {
         if (player) player.style.display = 'flex';
-        if (playerTitle) playerTitle.innerText = song.title;
-        if (playerImg) playerImg.src = song.image;
-
-        // עדכון מסך הנעילה
+        // מוודאים שהמצב הוא playing כדי שהשם לא ייעלם
         if ('mediaSession' in navigator) {
-            navigator.mediaSession.metadata = new MediaMetadata({
-                title: song.title,
-                artist: 'Instify',
-                artwork: [{ src: song.image, sizes: '512x512', type: 'image/jpg' }]
-            });
-            // עדכון המצב כדי שהאייפון יציג את הנגן
             navigator.mediaSession.playbackState = "playing";
         }
-    }).catch(e => console.error(e));
+    }).catch(e => console.error("Play Error:", e));
 }
 
-if ('mediaSession' in navigator) {
-    navigator.mediaSession.setActionHandler('play', async () => {
-        try {
-            await audio.play();
-            navigator.mediaSession.playbackState = "playing";
-        } catch (err) {
-            // אם האייפון חסם, אנחנו פשוט "מרעננים" את הסטטוס
-            console.log("Playback failed, retrying...");
-            audio.play();
-        }
-    });
+function updateMediaSession(song) {
+    if ('mediaSession' in navigator) {
+        navigator.mediaSession.metadata = new MediaMetadata({
+            title: song.title,
+            artist: 'Instify',
+            album: 'My Playlist',
+            artwork: [{ src: song.image, sizes: '512x512', type: 'image/jpg' }]
+        });
 
-    navigator.mediaSession.setActionHandler('pause', () => {
-        audio.pause();
-        navigator.mediaSession.playbackState = "paused";
+        // מוודאים שהאייפון יודע שאנחנו מנגנים כבר עכשיו
+        navigator.mediaSession.playbackState = "playing";
+
+        navigator.mediaSession.setActionHandler('play', () => {
+            audio.play();
+            navigator.mediaSession.playbackState = "playing";
+        });
+        
+        navigator.mediaSession.setActionHandler('pause', () => {
+            audio.pause();
+            navigator.mediaSession.playbackState = "paused";
+        });
+
+        navigator.mediaSession.setActionHandler('nexttrack', () => playNextSong());
+        navigator.mediaSession.setActionHandler('previoustrack', () => playPreviousSong());
+    }
+}
+
+const queueBtn = document.getElementById('queueBtn');
+const queuePanel = document.getElementById('queuePanel');
+
+queueBtn?.addEventListener('click', () => {
+    queuePanel.style.display = queuePanel.style.display === 'none' ? 'block' : 'none';
+    renderQueue();
+});
+
+function renderQueue() {
+    const list = document.getElementById('queueList');
+    if (!list) return;
+
+    list.innerHTML = '';
+
+    const currentId = audio.dataset.currentId;
+
+    songs.forEach(song => {
+        const div = document.createElement('div');
+
+        div.className = 'queue-item';
+        if (song.id.toString() === currentId) {
+            div.classList.add('active');
+        }
+
+        div.innerText = song.title;
+
+        div.onclick = () => {
+            play(song);
+            queuePanel.classList.remove('open');
+        };
+
+        list.appendChild(div);
     });
+}
+
+audio.addEventListener('ended', () => {
+    playNextSong();
+});
+
+function playPreviousSong() {
+    const currentId = audio.dataset.currentId;
+    const currentIndex = songs.findIndex(s => s.id.toString() === currentId);
+
+    if (currentIndex > 0) {
+        const prevSong = songs[currentIndex - 1];
+        renderQueue();
+        play(prevSong);
+    }
+}
+
+function playNextSong() {
+    const currentId = audio.dataset.currentId;
+    // מוצאים את האינדקס של השיר הנוכחי
+    const currentIndex = songs.findIndex(s => s.id.toString() === currentId);
+
+    // אם יש שיר הבא בתור (במערך songs)
+    if (currentIndex !== -1 && currentIndex < songs.length - 1) {
+        const nextSong = songs[currentIndex + 1];
+        renderQueue();
+        play(nextSong);
+    } else {
+        console.log("סוף הפלייליסט");
+        // אופציונלי: לחזור להתחלה
+        play(songs[0]);
+    }
 }
 
 // --- 6. עדכון כפתור Play/Pause (UI) ---
@@ -153,7 +240,7 @@ function render() {
             <div class="info">
                 <p>${song.title}</p>
             </div>
-            <button class="btn-delete" onclick="deleteSong(event, ${song.id})">ㄨ</button>
+            <button class="btn-delete" onclick="deleteSong(event, ${song.id})">✘</button>
         `;
         card.onclick = () => play(song);
         list.appendChild(card);
@@ -179,6 +266,21 @@ function deleteSong(e, id) {
 
 // --- 9. הגדרות נוספות ו-Theme ---
 document.addEventListener('DOMContentLoaded', () => {
+
+    window.addEventListener('load', () => {
+    const splash = document.getElementById('splash');
+
+    setTimeout(() => {
+        splash.style.opacity = '0';
+        splash.style.transform = 'scale(1.05)';
+
+        setTimeout(() => {
+            splash.remove();
+        }, 2000);
+
+    }, 2000); // כמה זמן המסך יישאר (1.2 שניות)
+});
+
     const mainPlayBtn = document.getElementById('playBtn');
     if (mainPlayBtn) {
         mainPlayBtn.onclick = (e) => {
@@ -187,6 +289,17 @@ document.addEventListener('DOMContentLoaded', () => {
             audio.paused ? audio.play() : audio.pause();
         };
     }
+
+        const queueBtn = document.getElementById('queueBtn');
+    const queuePanel = document.getElementById('queuePanel');
+
+    if (!queueBtn || !queuePanel) return;
+
+queueBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    queuePanel.classList.toggle('open');
+    renderQueue();
+});
 
 audio.addEventListener('play', () => {
     const icon = document.querySelector('.play-png-icon');
@@ -246,3 +359,34 @@ if (themeToggle) {
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').then(() => console.log("SW Registered"));
 }
+
+const progress = document.getElementById('progress');
+const currentTimeEl = document.getElementById('currentTime');
+const durationEl = document.getElementById('duration');
+
+// פונקציית עזר לעיצוב הזמן (משניות לפורמט 0:00)
+function formatTime(seconds) {
+    const min = Math.floor(seconds / 60);
+    const sec = Math.floor(seconds % 60);
+    return `${min}:${sec < 10 ? '0' : ''}${sec}`;
+}
+
+// 1. עדכון הפס בזמן שהשיר רץ
+audio.addEventListener('timeupdate', () => {
+    if (!isNaN(audio.duration)) {
+        const percent = (audio.currentTime / audio.duration) * 100;
+        progress.value = percent;
+        currentTimeEl.innerText = formatTime(audio.currentTime);
+    }
+});
+
+// 2. עדכון זמן השיר הכולל כשהוא נטען
+audio.addEventListener('loadedmetadata', () => {
+    durationEl.innerText = formatTime(audio.duration);
+});
+
+// 3. אפשרות לדלג בשיר ע"י הזזת הפס
+progress.addEventListener('input', () => {
+    const time = (progress.value / 100) * audio.duration;
+    audio.currentTime = time;
+});

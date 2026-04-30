@@ -16,17 +16,27 @@
 </head>
 <body>
 
-<header style="display: flex; justify-content: space-between; align-items: center; margin-top: 30px; margin-bottom: 20px; padding-left: 2px;">
-    <button id="themeToggle" class="theme-btn">
-    <span id="themeEmoji">☾</span>
-</button>
-    <div>
-        <div style="text-align: left;">
-        <h1 style="margin: 0; padding-left: 5px;">InStify</h1>
-        <div class="count" id="count" style="padding-left: 5px;">שירים</div>
-    </div>
-</header>
+<div id="splash">
+     <img src="logo.png" class="logo">
+</div>
 
+<header class="top-bar">
+
+    <div class="right-controls">
+        <button id="themeToggle" class="theme-btn">
+            <span id="themeEmoji">☾</span>
+        </button>
+
+        <button id="queueBtn">𝓠</button>
+    </div>
+
+    <div class="title-block">
+        <h1 style="margin: 0;">InStify</h1>
+        <div class="count" id="count">שירים</div>
+    </div>
+
+</header>
+        
 <div class="input-area">
 <input type="file" id="fileInput" style="display:none">
     
@@ -38,21 +48,45 @@
     <div class="list" id="playlist"></div>
 
 <div id="player" class="player-bar" style="display:none;">
-    
+    <!-- 1. תמונה בצד שמאל -->
+    <img id="playerImg" src="./song.jpg" class="player-thumb">
+
+    <!-- 2. מרכז: כותרת ומתחתיה פס התקדמות -->
     <div class="player-info">
-        <img id="playerImg" src="./song.jpg" class="player-thumb">
         <p id="playerTitle">טוען...</p>
+
+        <div class="progress-container">
+            <span id="currentTime">0:00</span>
+            <input type="range" id="progress" min="0" max="100" value="0">
+            <span id="duration">0:00</span>
+        </div>
     </div>
 
+    <!-- 3. כפתור שליטה בצד ימין -->
     <div class="player-controls">
         <button id="playBtn">
             <img src="play-icon.png" alt="Play" class="play-png-icon">
         </button>
     </div>
-
 </div>
 
     <!-- קישור לקובץ ה-JS החיצוני -->
     <script src="script.js"></script>
+    <script>
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js')
+        .then(() => console.log("SW registered"))
+        .catch(err => console.error("SW error:", err));
+}
+</script>
+
+<div id="queueOverlay"></div>
+
+<div id="queuePanel">
+    <div class="queue-handle"></div>
+    <h3>Up Next</h3>
+    <div id="queueList"></div>
+</div>
+</div>
 </body>
 </html>
